@@ -1,0 +1,194 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Video Viewer</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    padding: 40px;
+}
+
+.box {
+    max-width: 900px;
+    margin: auto;
+}
+
+input {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+button {
+    margin-top: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="editorContainer" class="box">
+
+    <h1>Video Viewer</h1>
+
+    <p>Paste a YouTube share link:</p>
+
+    <input
+        id="videoInput"
+        placeholder="https://youtu.be/xxxxxxxxxxx"
+    >
+
+    <br>
+
+    <button id="generateBtn">Generate Link</button>
+    <button id="copyBtn">Copy Link</button>
+
+    <br><br>
+
+    <input
+        id="generatedUrl"
+        placeholder="Generated URL"
+    >
+
+</div>
+
+<script>
+
+const videoInput = document.getElementById("videoInput");
+const urlBox = document.getElementById("generatedUrl");
+
+/* -------------------------
+   Extract video id
+------------------------- */
+
+function extractVideoId(url) {
+
+    try {
+
+        const u = new URL(url);
+
+        if (u.hostname.includes("youtu.be")) {
+            return u.pathname.substring(1);
+        }
+
+        if (u.hostname.includes("youtube.com")) {
+            return u.searchParams.get("v");
+        }
+
+    } catch {}
+
+    return null;
+}
+
+/* -------------------------
+   Generate share link
+------------------------- */
+
+function generateLink() {
+
+    const videoId = extractVideoId(videoInput.value);
+
+    if (!videoId) {
+        alert("Invalid YouTube URL");
+        return;
+    }
+
+    const url =
+        window.location.origin +
+        window.location.pathname +
+        "?video=" +
+        encodeURIComponent(videoId);
+
+    urlBox.value = url;
+}
+
+document
+    .getElementById("generateBtn")
+    .addEventListener("click", generateLink);
+
+/* -------------------------
+   Copy
+------------------------- */
+
+document
+    .getElementById("copyBtn")
+    .addEventListener("click", async () => {
+
+        generateLink();
+
+        try {
+            await navigator.clipboard.writeText(urlBox.value);
+        } catch {
+            urlBox.select();
+            document.execCommand("copy");
+        }
+    });
+
+/* -------------------------
+   Load from generated URL
+------------------------- */
+
+function loadFromUrlBox() {
+
+    try {
+
+        const url = new URL(urlBox.value);
+
+        const videoId =
+            url.searchParams.get("video");
+
+        if (!videoId) return;
+
+        videoInput.value =
+            "https://youtu.be/" + videoId;
+
+    } catch {}
+}
+
+urlBox.addEventListener("input", loadFromUrlBox);
+
+/* -------------------------
+   Viewer mode
+------------------------- */
+
+const params = new URLSearchParams(window.location.search);
+
+const videoId = params.get("video");
+
+if (videoId) {
+
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
+
+    document.body.innerHTML = `
+        <iframe
+            src="https://www.youtube.com/embed/${videoId}?autoplay=1"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen
+            style="
+                position:fixed;
+                inset:0;
+                width:100vw;
+                height:100vh;
+                border:none;
+            ">
+        </iframe>
+    `;
+}
+
+fetch("https://counter.silly-7f7.workers.dev/increment/show.itgirl.lol")
+    .then(res => res.json())
+    .then(data => {
+    document.getElementById("counter").textContent = data.count;
+    })
+    .catch(err => {
+    console.error(err);
+    document.getElementById("counter").textContent = "—";
+    });
+
+</script>
+
+</body>
+</html>
